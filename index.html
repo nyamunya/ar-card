@@ -39,46 +39,34 @@
     <script>
 AFRAME.registerShader("chromakey", {
   schema: {
-    src: { type: "map" },
-    color: { type: "color", default: "#00ff00" },
-    threshold: { type: "number", default: 0.4 },
-    softness: { type: "number", default: 0.2 }
+    src: { type: "map", is: "uniform" },
+    color: { type: "color", is: "uniform", default: "#00ff00" },
+    threshold: { type: "number", is: "uniform", default: 0.30 },
+    softness: { type: "number", is: "uniform", default: 0.12 }
   },
 
-  init: function (data) {
-    this.material = new THREE.ShaderMaterial({
-      uniforms: {
-        map: { value: data.src },
-        color: { value: new THREE.Color(data.color) },
-        threshold: { value: data.threshold },
-        softness: { value: data.softness }
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform sampler2D map;
-        uniform vec3 color;
-        uniform float threshold;
-        uniform float softness;
-        varying vec2 vUv;
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
 
-        void main() {
-          vec4 tex = texture2D(map, vUv);
+  fragmentShader: `
+    uniform sampler2D src;
+    uniform vec3 color;
+    uniform float threshold;
+    uniform float softness;
+    varying vec2 vUv;
 
-          float diff = distance(tex.rgb, color);
-          float alpha = smoothstep(threshold, threshold + softness, diff);
-
-          gl_FragColor = vec4(tex.rgb, alpha);
-        }
-      `,
-      transparent: true
-    });
-  }
+    void main() {
+      vec4 tex = texture2D(src, vUv);
+      float diff = distance(tex.rgb, color);
+      float alpha = smoothstep(threshold, threshold + softness, diff);
+      gl_FragColor = vec4(tex.rgb, alpha * tex.a);
+    }
+  `
 });
 </script>
   </head>
@@ -111,7 +99,7 @@ AFRAME.registerShader("chromakey", {
           height="0.75"
           width="1"
           rotation="70 0 0"
-          material="shader: chromakey; src: #characterVideo; threshold: 0.4; softness: 0.2;"
+          material="shader: chromakey; src: #characterVideo; color: #00ff00; threshold: 0.30; softness: 0.12; transparent: true; side: double;"
         ></a-plane>
 
       </a-entity>
