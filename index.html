@@ -41,8 +41,8 @@ AFRAME.registerShader("chromakey", {
   schema: {
     src: { type: "map", is: "uniform" },
     color: { type: "color", is: "uniform", default: "#00ff00" },
-    threshold: { type: "number", is: "uniform", default: 0.30 },
-    softness: { type: "number", is: "uniform", default: 0.12 }
+    threshold: { type: "number", is: "uniform", default: 0.35 },
+    softness: { type: "number", is: "uniform", default: 0.15 }
   },
 
   vertexShader: `
