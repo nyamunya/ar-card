@@ -2,11 +2,8 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  />
-  <title>AR 名片｜單一人物影片版</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AR Minimal Test</title>
 
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -20,7 +17,6 @@
       background: #000;
       font-family: sans-serif;
     }
-
     .hint {
       position: fixed;
       left: 50%;
@@ -28,13 +24,11 @@
       transform: translateX(-50%);
       z-index: 10;
       color: #fff;
-      background: rgba(0, 0, 0, 0.45);
+      background: rgba(0,0,0,0.45);
       padding: 10px 14px;
       border-radius: 999px;
       font-size: 14px;
-      backdrop-filter: blur(6px);
       white-space: nowrap;
-      text-align: center;
     }
   </style>
 </head>
@@ -44,174 +38,28 @@
   <a-scene
     mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiScanning: true;"
     embedded
-    color-space="sRGB"
-    renderer="colorManagement: true, physicallyCorrectLights: false"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
+    renderer="colorManagement: true;"
   >
-    <a-assets>
-      <!-- 綠幕人物影片 -->
-      <video
-        id="charVideo"
-        src="./videos/character.mp4"
-        preload="auto"
-        autoplay
-        muted
-        loop
-        playsinline
-        webkit-playsinline
-        crossorigin="anonymous"
-      ></video>
-    </a-assets>
-
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- 掃到第一張 target 後出現內容 -->
     <a-entity id="targetRoot" mindar-image-target="targetIndex: 0">
-
-      <!-- 假陰影：讓角色更像站在名片上 -->
       <a-circle
         position="0 0.02 -0.02"
         rotation="-90 0 0"
         radius="0.16"
         color="#000000"
-        opacity="0.18"
+        opacity="0.2"
       ></a-circle>
 
-      <!-- 人物影片 plane -->
       <a-plane
-        id="characterPlane"
         position="0 0.28 0"
         width="0.72"
         height="1.08"
-        material="shader: chromakey-clean; src: #charVideo; keyColor: #00ff00; similarity: 0.28; smoothness: 0.10; spill: 0.18; transparent: true; side: double;"
+        color="#ff7eb6"
       ></a-plane>
-
-      <!-- 可選：背後補一層很淡的黑色，增加立牌厚度感 -->
-      <a-plane
-        id="characterBack"
-        position="0 0.28 -0.005"
-        width="0.72"
-        height="1.08"
-        color="#111111"
-        opacity="0.10"
-      ></a-plane>
-
     </a-entity>
   </a-scene>
-
-  <script>
-    // 綠幕去背 Shader：比單純 if(discard) 乾淨很多
-    AFRAME.registerShader("chromakey-clean", {
-      schema: {
-        src: { type: "map" },
-        keyColor: { type: "color", default: "#00ff00" },
-        similarity: { type: "number", default: 0.28 },
-        smoothness: { type: "number", default: 0.10 },
-        spill: { type: "number", default: 0.18 }
-      },
-
-      init: function (data) {
-        const texture = data.src;
-
-        this.material = new THREE.ShaderMaterial({
-          uniforms: {
-            map: { value: texture },
-            keyColor: { value: new THREE.Color(data.keyColor) },
-            similarity: { value: data.similarity },
-            smoothness: { value: data.smoothness },
-            spill: { value: data.spill }
-          },
-          vertexShader: `
-            varying vec2 vUv;
-
-            void main() {
-              vUv = uv;
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-          `,
-          fragmentShader: `
-            uniform sampler2D map;
-            uniform vec3 keyColor;
-            uniform float similarity;
-            uniform float smoothness;
-            uniform float spill;
-            varying vec2 vUv;
-
-            void main() {
-              vec4 videoColor = texture2D(map, vUv);
-              vec3 rgb = videoColor.rgb;
-
-              // 算與綠幕色距離
-              float colorDist = distance(rgb, keyColor);
-
-              // 柔邊 alpha，避免硬切鋸齒
-              float alpha = smoothstep(similarity, similarity + smoothness, colorDist);
-
-              // 去綠溢色：降低超出的綠色量
-              float greenExcess = max(0.0, rgb.g - max(rgb.r, rgb.b));
-              rgb.g = mix(rgb.g, max(rgb.r, rgb.b), spill * greenExcess * 3.0);
-
-              // 太透明的部分直接丟掉
-              if (alpha < 0.03) discard;
-
-              gl_FragColor = vec4(rgb, alpha);
-            }
-          `,
-          transparent: true,
-          side: THREE.DoubleSide
-        });
-      },
-
-      update: function (data) {
-        if (!this.material) return;
-        this.material.uniforms.keyColor.value = new THREE.Color(data.keyColor);
-        this.material.uniforms.similarity.value = data.similarity;
-        this.material.uniforms.smoothness.value = data.smoothness;
-        this.material.uniforms.spill.value = data.spill;
-      }
-    });
-
-    // 自動播放處理：iPhone / 行動裝置較穩
-    document.addEventListener("DOMContentLoaded", () => {
-      const scene = document.querySelector("a-scene");
-      const targetRoot = document.getElementById("targetRoot");
-      const video = document.getElementById("charVideo");
-
-      const playVideo = () => {
-        if (!video) return;
-        video.muted = true;
-        video.setAttribute("muted", "");
-        video.setAttribute("playsinline", "");
-        video.setAttribute("webkit-playsinline", "");
-        video.play().catch(() => {});
-      };
-
-      scene.addEventListener("loaded", () => {
-        playVideo();
-      });
-
-      targetRoot.addEventListener("targetFound", () => {
-        playVideo();
-      });
-
-      // 某些手機第一次互動後會更穩
-      document.body.addEventListener(
-        "click",
-        () => {
-          playVideo();
-        },
-        { once: true }
-      );
-
-      document.body.addEventListener(
-        "touchstart",
-        () => {
-          playVideo();
-        },
-        { once: true }
-      );
-    });
-  </script>
 </body>
 </html>
