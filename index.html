@@ -1,8 +1,8 @@
-<!DOCTYPE html>
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.0.0/dist/aframe-extras.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <style>
       html, body {
@@ -11,21 +11,6 @@
         height: 100%;
         overflow: hidden;
         background: black;
-        font-family: sans-serif;
-      }
-
-      .label {
-        position: fixed;
-        left: 50%;
-        top: 20px;
-        transform: translateX(-50%);
-        color: white;
-        background: rgba(255, 0, 120, 0.8);
-        padding: 10px 14px;
-        border-radius: 12px;
-        z-index: 20;
-        font-size: 16px;
-        font-weight: bold;
       }
 
       .hint {
@@ -35,37 +20,76 @@
         transform: translateX(-50%);
         z-index: 20;
         color: white;
-        background: rgba(0,0,0,0.45);
+        background: rgba(0, 0, 0, 0.45);
         padding: 10px 14px;
         border-radius: 999px;
         font-size: 14px;
         white-space: nowrap;
+        font-family: sans-serif;
       }
     </style>
   </head>
-
   <body>
-    <div class="label">VERSION-OFFICIAL-BOX-01</div>
-    <div class="hint">請用官方 card 圖測試</div>
+    <div class="hint">請將鏡頭對準名片</div>
 
-    <a-scene
-      mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind;"
-      color-space="sRGB"
-      renderer="colorManagement: true, physicallyCorrectLights"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
-    >
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+      <a-assets>
+        <video
+          id="characterVideo"
+          src="./videos/character.mp4"
+          preload="auto"
+          autoplay
+          muted
+          loop
+          playsinline
+          webkit-playsinline
+          crossorigin="anonymous"
+        ></video>
+      </a-assets>
+
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-box
-          position="0 0 0.1"
-          depth="0.08"
-          height="0.5"
-          width="0.5"
-          color="#ff5fa2"
-        ></a-box>
+      <a-entity id="target0" mindar-image-target="targetIndex: 0">
+        <a-circle
+          position="0 0.02 -0.02"
+          rotation="-90 0 0"
+          radius="0.16"
+          color="#000000"
+          opacity="0.18"
+        ></a-circle>
+
+        <a-plane
+          id="videoPlane"
+          rotation="0 0 0"
+          position="0 0.3 0"
+          width="0.75"
+          height="1.1"
+          src="#characterVideo"
+          material="shader: flat; side: double;"
+        ></a-plane>
       </a-entity>
     </a-scene>
+
+    <script>
+      const video = document.querySelector("#characterVideo");
+      const target0 = document.querySelector("#target0");
+
+      const playVideo = async () => {
+        try {
+          video.muted = true;
+          await video.play();
+          console.log("video playing");
+        } catch (e) {
+          console.error("video play failed", e);
+        }
+      };
+
+      target0.addEventListener("targetFound", () => {
+        playVideo();
+      });
+
+      document.body.addEventListener("click", playVideo, { once: true });
+      document.body.addEventListener("touchstart", playVideo, { once: true });
+    </script>
   </body>
 </html>
