@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>MindAR Minimal Test</title>
+  <title>AR Card Test</title>
 
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
@@ -17,6 +17,7 @@
       background: #000;
       font-family: sans-serif;
     }
+
     .hint {
       position: fixed;
       left: 50%;
@@ -24,7 +25,7 @@
       transform: translateX(-50%);
       z-index: 10;
       color: #fff;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.45);
       padding: 10px 14px;
       border-radius: 999px;
       font-size: 14px;
@@ -36,23 +37,69 @@
   <div class="hint">請將鏡頭對準名片</div>
 
   <a-scene
-    mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiScanning: true;"
-    embedded
+    mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiScanning: yes; uiError: yes; uiLoading: yes;"
     color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
-    renderer="colorManagement: true;"
+    embedded
   >
+    <a-assets>
+      <video
+        id="charVideo"
+        src="./videos/character.mp4"
+        preload="auto"
+        autoplay
+        muted
+        loop
+        playsinline
+        webkit-playsinline
+        crossorigin="anonymous"
+      ></video>
+    </a-assets>
+
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <a-entity mindar-image-target="targetIndex: 0">
+    <a-entity id="target" mindar-image-target="targetIndex: 0">
       <a-plane
-        position="0 0.28 0"
-        width="0.72"
-        height="1.08"
-        color="#ff7eb6"
+        id="videoPlane"
+        position="0 0.3 0"
+        width="0.75"
+        height="1.1"
+        material="shader: flat; src: #charVideo; transparent: true; side: double;"
       ></a-plane>
+
+      <a-circle
+        position="0 0.02 -0.02"
+        rotation="-90 0 0"
+        radius="0.16"
+        color="#000000"
+        opacity="0.18"
+      ></a-circle>
     </a-entity>
   </a-scene>
+
+  <script>
+    const video = document.querySelector("#charVideo");
+    const target = document.querySelector("#target");
+
+    const playVideo = async () => {
+      try {
+        video.muted = true;
+        await video.play();
+        console.log("video playing");
+      } catch (e) {
+        console.error("video play failed", e);
+      }
+    };
+
+    target.addEventListener("targetFound", () => {
+      console.log("target found");
+      playVideo();
+    });
+
+    document.body.addEventListener("click", playVideo, { once: true });
+    document.body.addEventListener("touchstart", playVideo, { once: true });
+  </script>
 </body>
 </html>
