@@ -3,12 +3,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <!-- 🔥 綠幕去背 shader（新增這段） -->
+    <script>
+      AFRAME.registerShader("chromakey", {
+        schema: {
+          src: { type: "map" },
+          keyColor: { type: "color", default: "#00ff00" },
+          similarity: { type: "number", default: 0.28 },
+          smoothness: { type: "number", default: 0.10 },
+          spill: { type: "number", default: 0.18 }
+        },
+
+        init: function (data) {
+          this.material = new THREE.ShaderMaterial({
+            uniforms: {
+              map: { value: data.src },
+              keyColor: { value: new THREE.Color(data.keyColor) },
+              similarity: { value: data.similarity },
+              smoothness: { value: data.smoothness },
+              spill: { value: data.spill }
+            },
+            vertexShader: `
+              varying vec2 vUv;
+              void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+              }
+            `,
+            fragmentShader: `
+              uniform sampler2D map;
+              uniform vec3 keyColor;
+              uniform float similarity;
+              uniform float smoothness;
+              uniform float spill;
+              varying vec2 vUv;
+
+              void main() {
+                vec4 color = texture2D(map, vUv);
+                vec3 rgb = color.rgb;
+
+                float dist = distance(rgb, keyColor);
+                float alpha = smoothstep(similarity, similarity + smoothness, dist);
+
+                // 🔥 去綠邊（關鍵）
+                float greenExcess = max(0.0, rgb.g - max(rgb.r, rgb.b));
+                rgb.g = mix(rgb.g, max(rgb.r, rgb.b), spill * greenExcess * 3.0);
+
+                if(alpha < 0.02) discard;
+
+                gl_FragColor = vec4(rgb, alpha);
+              }
+            `,
+            transparent: true,
+            side: THREE.DoubleSide
+          });
+        }
+      });
+    </script>
   </head>
+
   <body>
     <a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <!-- 你的影片 -->
         <video
           id="characterVideo"
           src="./videos/character.mp4"
@@ -26,14 +84,12 @@
 
       <a-entity id="target" mindar-image-target="targetIndex: 0">
         
-        <!-- 你的影片取代原本 card + model -->
         <a-plane
-          src="#characterVideo"
           position="0 0 0"
           height="1"
           width="0.7"
           rotation="0 0 0"
-          material="shader: flat; side: double;"
+          material="shader: chromakey; src: #characterVideo"
         ></a-plane>
 
       </a-entity>
