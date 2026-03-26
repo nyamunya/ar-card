@@ -41,8 +41,8 @@ AFRAME.registerShader("chromakey", {
   schema: {
     src: { type: "map", is: "uniform" },
     color: { type: "color", is: "uniform", default: "#00ff00" },
-    threshold: { type: "number", is: "uniform", default: 1.00 },
-    softness: { type: "number", is: "uniform", default: 0.12 }
+    threshold: { type: "number", is: "uniform", default: 0.70 },
+    softness: { type: "number", is: "uniform", default: 0.15 }
   },
 
   vertexShader: `
@@ -99,7 +99,7 @@ AFRAME.registerShader("chromakey", {
           height="2"
           width="2"
           rotation="70 0 0"
-          material="shader: chromakey; src: #characterVideo; color: #00ff00; threshold: 1.00; softness: 0.12; transparent: true; side: double;"
+          material="shader: chromakey; src: #characterVideo; color: #00ff00; threshold: 0.70; softness: 0.15; transparent: true; side: double;"
         ></a-plane>
 
       </a-entity>
