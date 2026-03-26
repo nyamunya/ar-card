@@ -2,56 +2,166 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Camera Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AR 名片</title>
+
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <script>
+    AFRAME.registerShader("chromakey-clean", {
+      schema: {
+        src: { type: "map" },
+        keyColor: { type: "color", default: "#00ff00" },
+        similarity: { type: "number", default: 0.28 },
+        smoothness: { type: "number", default: 0.10 },
+        spill: { type: "number", default: 0.18 }
+      },
+
+      init: function (data) {
+        const texture = data.src;
+
+        this.material = new THREE.ShaderMaterial({
+          uniforms: {
+            map: { value: texture },
+            keyColor: { value: new THREE.Color(data.keyColor) },
+            similarity: { value: data.similarity },
+            smoothness: { value: data.smoothness },
+            spill: { value: data.spill }
+          },
+          vertexShader: `
+            varying vec2 vUv;
+            void main() {
+              vUv = uv;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform sampler2D map;
+            uniform vec3 keyColor;
+            uniform float similarity;
+            uniform float smoothness;
+            uniform float spill;
+            varying vec2 vUv;
+
+            void main() {
+              vec4 videoColor = texture2D(map, vUv);
+              vec3 rgb = videoColor.rgb;
+
+              float colorDist = distance(rgb, keyColor);
+              float alpha = smoothstep(similarity, similarity + smoothness, colorDist);
+
+              float greenExcess = max(0.0, rgb.g - max(rgb.r, rgb.b));
+              rgb.g = mix(rgb.g, max(rgb.r, rgb.b), spill * greenExcess * 3.0);
+
+              if (alpha < 0.03) discard;
+
+              gl_FragColor = vec4(rgb, alpha);
+            }
+          `,
+          transparent: true,
+          side: THREE.DoubleSide
+        });
+      },
+
+      update: function (data) {
+        if (!this.material) return;
+        this.material.uniforms.keyColor.value = new THREE.Color(data.keyColor);
+        this.material.uniforms.similarity.value = data.similarity;
+        this.material.uniforms.smoothness.value = data.smoothness;
+        this.material.uniforms.spill.value = data.spill;
+      }
+    });
+  </script>
+
   <style>
     html, body {
       margin: 0;
       width: 100%;
       height: 100%;
-      background: #000;
       overflow: hidden;
+      background: #000;
       font-family: sans-serif;
     }
-    #video {
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      background: #000;
-    }
-    .label {
+
+    .hint {
       position: fixed;
       left: 50%;
       bottom: 20px;
       transform: translateX(-50%);
-      color: white;
-      background: rgba(0,0,0,0.5);
+      z-index: 10;
+      color: #fff;
+      background: rgba(0,0,0,0.45);
       padding: 10px 14px;
       border-radius: 999px;
-      z-index: 10;
+      font-size: 14px;
+      white-space: nowrap;
     }
   </style>
 </head>
 <body>
-  <video id="video" autoplay playsinline muted></video>
-  <div class="label">相機測試中</div>
+  <div class="hint">請將鏡頭對準名片</div>
+
+  <a-scene
+    mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiScanning: true;"
+    embedded
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    renderer="colorManagement: true;"
+  >
+    <a-assets>
+      <video
+        id="charVideo"
+        src="./videos/character.mp4"
+        preload="auto"
+        autoplay
+        muted
+        loop
+        playsinline
+        webkit-playsinline
+        crossorigin="anonymous"
+      ></video>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity id="targetRoot" mindar-image-target="targetIndex: 0">
+      <a-circle
+        position="0 0.02 -0.02"
+        rotation="-90 0 0"
+        radius="0.16"
+        color="#000000"
+        opacity="0.18"
+      ></a-circle>
+
+      <a-plane
+        id="characterPlane"
+        position="0 0.28 0"
+        width="0.72"
+        height="1.08"
+        material="shader: chromakey-clean; src: #charVideo; keyColor: #00ff00; similarity: 0.28; smoothness: 0.10; spill: 0.18; transparent: true; side: double;"
+      ></a-plane>
+    </a-entity>
+  </a-scene>
 
   <script>
-    async function startCamera() {
-      const video = document.getElementById("video");
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-          audio: false
-        });
-        video.srcObject = stream;
-      } catch (err) {
-        alert("相機啟動失敗：" + err.message);
-        console.error(err);
-      }
-    }
+    document.addEventListener("DOMContentLoaded", () => {
+      const video = document.getElementById("charVideo");
+      const targetRoot = document.getElementById("targetRoot");
 
-    startCamera();
+      const playVideo = () => {
+        if (!video) return;
+        video.muted = true;
+        video.play().catch(() => {});
+      };
+
+      targetRoot.addEventListener("targetFound", () => {
+        playVideo();
+      });
+
+      document.body.addEventListener("click", playVideo, { once: true });
+      document.body.addEventListener("touchstart", playVideo, { once: true });
+    });
   </script>
 </body>
 </html>
