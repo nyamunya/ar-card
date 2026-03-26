@@ -40,20 +40,18 @@
 AFRAME.registerShader("chromakey", {
   schema: {
     src: { type: "map" },
-    keyColor: { type: "color", default: "#00ff00" },
-    similarity: { type: "number", default: 0.24 },
-    smoothness: { type: "number", default: 0.08 },
-    spill: { type: "number", default: 0.20 }
+    color: { type: "color", default: "#00ff00" },
+    threshold: { type: "number", default: 0.4 },
+    softness: { type: "number", default: 0.2 }
   },
 
   init: function (data) {
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         map: { value: data.src },
-        keyColor: { value: new THREE.Color(data.keyColor) },
-        similarity: { value: data.similarity },
-        smoothness: { value: data.smoothness },
-        spill: { value: data.spill }
+        color: { value: new THREE.Color(data.color) },
+        threshold: { value: data.threshold },
+        softness: { value: data.softness }
       },
       vertexShader: `
         varying vec2 vUv;
@@ -64,30 +62,21 @@ AFRAME.registerShader("chromakey", {
       `,
       fragmentShader: `
         uniform sampler2D map;
-        uniform vec3 keyColor;
-        uniform float similarity;
-        uniform float smoothness;
-        uniform float spill;
+        uniform vec3 color;
+        uniform float threshold;
+        uniform float softness;
         varying vec2 vUv;
 
         void main() {
-          vec4 color = texture2D(map, vUv);
-          vec3 rgb = color.rgb;
+          vec4 tex = texture2D(map, vUv);
 
-          float dist = distance(rgb, keyColor);
-          float alpha = smoothstep(similarity, similarity + smoothness, dist);
+          float diff = distance(tex.rgb, color);
+          float alpha = smoothstep(threshold, threshold + softness, diff);
 
-          // 去綠邊
-          float greenExcess = max(0.0, rgb.g - max(rgb.r, rgb.b));
-          rgb.g = mix(rgb.g, max(rgb.r, rgb.b), spill * greenExcess * 3.0);
-
-          if(alpha < 0.03) discard;
-
-          gl_FragColor = vec4(rgb, alpha);
+          gl_FragColor = vec4(tex.rgb, alpha);
         }
       `,
-      transparent: true,
-      side: THREE.DoubleSide
+      transparent: true
     });
   }
 });
@@ -122,7 +111,7 @@ AFRAME.registerShader("chromakey", {
           height="0.75"
           width="1"
           rotation="70 0 0"
-          material="shader: chromakey; src: #characterVideo; similarity: 0.24; smoothness: 0.08; spill: 0.20;"
+          material="shader: chromakey; src: #characterVideo; threshold: 0.4; softness: 0.2;"
         ></a-plane>
 
       </a-entity>
