@@ -41,9 +41,8 @@ AFRAME.registerShader("chromakey", {
   schema: {
     src: { type: "map" },
     color: { type: "color", default: "#00ff00" },
-    threshold: { type: "number", default: 0.42 },
-    softness: { type: "number", default: 0.18 },
-    spill: { type: "number", default: 0.65 }
+    threshold: { type: "number", default: 0.38 },
+    softness: { type: "number", default: 0.18 }
   },
 
   init: function (data) {
@@ -52,14 +51,13 @@ AFRAME.registerShader("chromakey", {
         map: { value: data.src },
         color: { value: new THREE.Color(data.color) },
         threshold: { value: data.threshold },
-        softness: { value: data.softness },
-        spill: { value: data.spill }
+        softness: { value: data.softness }
       },
       vertexShader: `
         varying vec2 vUv;
         void main() {
           vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
       fragmentShader: `
@@ -67,22 +65,15 @@ AFRAME.registerShader("chromakey", {
         uniform vec3 color;
         uniform float threshold;
         uniform float softness;
-        uniform float spill;
         varying vec2 vUv;
 
         void main() {
           vec4 tex = texture2D(map, vUv);
-          vec3 rgb = tex.rgb;
 
-          float diff = distance(rgb, color);
+          float diff = distance(tex.rgb, color);
           float alpha = smoothstep(threshold, threshold + softness, diff);
 
-          // 去綠邊：如果 G 明顯高於 R/B，就壓回去
-          float maxRB = max(rgb.r, rgb.b);
-          float greenSpill = max(0.0, rgb.g - maxRB);
-          rgb.g = mix(rgb.g, maxRB, greenSpill * spill * 2.0);
-
-          gl_FragColor = vec4(rgb, alpha);
+          gl_FragColor = vec4(tex.rgb, alpha);
         }
       `,
       transparent: true,
@@ -121,7 +112,7 @@ AFRAME.registerShader("chromakey", {
           height="2"
           width="2"
           rotation="70 0 0"
-          material="shader: chromakey; src: #characterVideo; threshold: 0.42; softness: 0.18; spill: 0.65;"
+          material="shader: chromakey; src: #characterVideo; threshold: 0.38; softness: 0.18;"
         ></a-plane>
 
       </a-entity>
