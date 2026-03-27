@@ -36,18 +36,25 @@
     background: rgba(0, 0, 0, 0.8);
   }
       <style>
-#logo-ui {
+#ui-layer {
   position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* LOGO */
+#logo-ui {
+  position: absolute;
   top: 20px;
   right: 20px;
 
-  width: 60px;       /* 關鍵：限制寬度 */
-  height: auto;      /* 保持比例 */
-
-  max-width: 20vw;   /* 防止手機爆掉（很重要） */
-
-  z-index: 9999;
-  pointer-events: none;
+  width: 60px;
+  height: auto;
 }
 </style>
     <script>
@@ -85,7 +92,9 @@ AFRAME.registerShader("chromakey", {
 </script>
   </head>
   <body>
-    <img id="logo-ui" src="./logo.png">
+    <div id="ui-layer">
+  <img id="logo-ui" src="./logo.png?v=3" />
+</div>
     <a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       
       <a-assets>
