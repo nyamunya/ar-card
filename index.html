@@ -69,6 +69,13 @@ AFRAME.registerShader("chromakey", {
   `
 });
 </script>
+    #logo-ui {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 60px;
+  z-index: 999;
+}
   </head>
   <body>
     <a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
@@ -135,5 +142,6 @@ AFRAME.registerShader("chromakey", {
     🐦 Twitter
   </a>
 </div>
+    <img id="logo-ui" src="./logo.png">
   </body>
 </html>
