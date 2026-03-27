@@ -36,15 +36,15 @@
     background: rgba(0, 0, 0, 0.8);
   }
       <style>
- #logo-ui {
+#logo-ui {
   position: fixed;
-  top: 2vh;
-  right: 3vw;
+  top: 20px;
+  right: 20px;
 
-  width: 14vw;
-  max-width: 70px;
+  width: 60px;       /* 關鍵：限制寬度 */
+  height: auto;      /* 保持比例 */
 
-  height: auto;
+  max-width: 20vw;   /* 防止手機爆掉（很重要） */
 
   z-index: 9999;
   pointer-events: none;
