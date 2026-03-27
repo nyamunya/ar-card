@@ -35,6 +35,18 @@
   .bottom-btn:hover {
     background: rgba(0, 0, 0, 0.8);
   }
+      <style>
+  #logo-ui {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 70px;
+
+    z-index: 9999;
+
+    pointer-events: none;
+  }
+</style>
 </style>
     <script>
 AFRAME.registerShader("chromakey", {
@@ -78,6 +90,7 @@ AFRAME.registerShader("chromakey", {
 }
   </head>
   <body>
+    <img id="logo-ui" src="./logo.png">
     <a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       
       <a-assets>
@@ -142,6 +155,5 @@ AFRAME.registerShader("chromakey", {
     🐦 Twitter
   </a>
 </div>
-    <img id="logo-ui" src="./logo.png">
   </body>
 </html>
